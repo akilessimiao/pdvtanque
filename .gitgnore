@@ -1,0 +1,31 @@
+cat > .gitignore << 'EOF'
+Credenciais e configurações locais
+.env
+config/.env
+*.log
+IDE e editor
+.vscode/
+.idea/
+*.swp
+*.swo
+Sistema
+.DS_Store
+Thumbs.db
+Uploads
+uploads/*
+!uploads/.gitkeep
+Cache e temporários
+cache/*
+tmp/*
+*.tmp
+Banco de dados (nunca commitar dumps com dados reais)
+*.sql
+!sql/schema.sql
+!sql/seed_demo.sql
+Dependências PHP
+/vendor/
+composer.lock
+Node
+/node_modules/
+npm-debug.log
+EOF
