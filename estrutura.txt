@@ -1,0 +1,74 @@
+pdvtanque/
+├── 📁 config/
+│   ├── .env.example
+│   ├── database.php
+│   ├── security.php
+│   └── fiscal.php
+├── 📁 api/
+│   ├── validar_licenca.php
+│   ├── pix_webhook.php
+│   ├── sync.php
+│   └── whatsapp_report.php
+├── 📁 demo/
+│   ├── index.php
+│   └── limitacoes.php
+├── 📁 prod/
+│   ├── index.php
+│   ├── fiscal/
+│   │   ├── emitir_nfce.php
+│   │   └── imprimir_cupom.php
+│   ├── pix/
+│   │   ├── gerar_qrcode.php
+│   │   └── consultar_status.php
+│   ├── admin/
+│   │   ├── dashboard.php
+│   │   ├── usuarios.php
+│   │   └── auditoria.php
+│   └── relatorios/
+│       ├── vendas_diario.php
+│       └── exportar_whatsapp.php
+├── 📁 assets/
+│   ├── css/
+│   │   ├── main.css
+│   │   ├── pdv.css
+│   │   └── print.css
+│   ├── js/
+│   │   ├── pdv-core.js
+│   │   ├── pix-handler.js
+│   │   └── fiscal-utils.js
+│   ├── img/
+│   │   ├── logo.svg
+│   │   ├── icons/
+│   │   └── qrcode-placeholder.png
+│   └── fonts/
+├── 📁 sql/
+│   ├── schema.sql
+│   ├── seed_demo.sql
+│   └── migrate_v2.sql
+├── 📁 install/
+│   ├── instalador.php
+│   ├── ativacao.php
+│   └── verificar_requisitos.php
+├── 📁 tests/
+│   ├── PHPUnit/
+│   │   ├── DatabaseTest.php
+│   │   ├── LicencaTest.php
+│   │   └── PixTest.php
+│   └── bootstrap.php
+├── 📁 docs/
+│   ├── manual_usuario.md
+│   ├── guia_fiscal.md
+│   ├── api_reference.md
+│   └── troubleshooting.md
+├── 📁 docker/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── nginx.conf
+├── 📁 libs/
+│   └── NFePHP/ (submodule para NFC-e)
+├── .gitignore
+├── .htaccess
+├── composer.json
+├── phpunit.xml
+├── README.md
+└── index.php (redireciona para demo/prod conforme licença)

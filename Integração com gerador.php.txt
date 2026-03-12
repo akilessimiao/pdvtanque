@@ -1,0 +1,12 @@
+✅ Funcionalidades completas:
+- Integração com APIs bancárias (PIX automático)
+- Emissão de cupons fiscais e não fiscais
+- Gestão de caixa com sangria
+- Reemissão de cupons com senha admin
+- Relatórios completos para WhatsApp
+- Sincronização em tempo real com o BD myshared0786
+
+🔐 Segurança:
+- Senha administrativa para alterações/exclusões
+- Tokens de ativação validados contra o gerador
+- Logs de auditoria para ações críticas

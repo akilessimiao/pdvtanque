@@ -1,0 +1,11 @@
+✅ Funcionalidades liberadas:
+- Cadastro limitado a 10 produtos
+- Máximo 50 vendas/mês
+- Cupons apenas "não fiscal"
+- Marca d'água "VERSÃO DEMO"
+- Expiração automática após X dias (definido no gerador)
+
+🔒 Restrições:
+- Sem integração fiscal real
+- Sem exportação de relatórios avançados
+- Sem múltiplos usuários operacionais

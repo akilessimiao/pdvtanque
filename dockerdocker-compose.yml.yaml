@@ -1,0 +1,77 @@
+# docker/docker-compose.yml
+version: '3.8'
+
+services:
+  pdv-app:
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: pdv_tanque
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - APP_ENV=production
+      - DB_HOST=db
+      - DB_DATABASE=pdvtanque
+      - DB_USERNAME=pdvtanque
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN}
+    volumes:
+      - ../config/.env:/var/www/config/.env:ro
+      - ../uploads:/var/www/uploads
+    depends_on:
+      - db
+      - redis
+    networks:
+      - pdv-net
+
+  db:
+    image: mysql:8.0
+    container_name: pdv_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: pdvtanque
+      MYSQL_USER: pdvtanque
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_/var/lib/mysql
+      - ../sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - pdv-net
+    command: --default-authentication-plugin=mysql_native_password
+
+  redis:
+    image: redis:7-alpine
+    container_name: pdv_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - pdv-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: pdv_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../:/var/www
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - pdv-app
+    networks:
+      - pdv-net
+
+volumes:
+  mysql_
+
+networks:
+  pdv-net:
+    driver: bridge

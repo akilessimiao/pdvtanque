@@ -1,0 +1,268 @@
+
+---
+
+## 🗄️ 2. sql/schema.sql (Banco de Dados Completo)
+
+```sql
+-- =====================================================
+-- PDV TANQUE DIGITAL - Schema Completo
+-- Servidor: myshared0786 | Database: pdvtanque
+-- =====================================================
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "-03:00";
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: empresas (clientes do PDV)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS empresas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nome_fantasia VARCHAR(100) NOT NULL,
+    razao_social VARCHAR(150),
+    cnpj VARCHAR(18) UNIQUE,
+    ie VARCHAR(20),
+    email VARCHAR(100),
+    telefone VARCHAR(20),
+    whatsapp VARCHAR(20),
+    endereco TEXT,
+    numero VARCHAR(10),
+    complemento VARCHAR(50),
+    bairro VARCHAR(50),
+    cidade VARCHAR(50) DEFAULT 'Natal',
+    uf CHAR(2) DEFAULT 'RN',
+    cep VARCHAR(10),
+    logo_url VARCHAR(255),
+    status ENUM('demo', 'ativo', 'inativo', 'suspenso') DEFAULT 'demo',
+    plano ENUM('basico', 'pro', 'enterprise') DEFAULT 'basico',
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_cnpj (cnpj),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: licencas (controle de ativação)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS licencas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    empresa_id INT NOT NULL,
+    token_unico CHAR(64) NOT NULL UNIQUE,
+    chave_ativacao VARCHAR(128),
+    dias_validade INT DEFAULT 30,
+    max_produtos INT DEFAULT 10,
+    max_vendas_diarias INT DEFAULT 50,
+    permite_fiscal BOOLEAN DEFAULT FALSE,
+    permite_pix BOOLEAN DEFAULT FALSE,
+    permite_relatorios BOOLEAN DEFAULT FALSE,
+    data_inicio DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_expiracao DATETIME NOT NULL,
+    status ENUM('ativa', 'expirada', 'cancelada', 'bloqueada') DEFAULT 'ativa',
+    ultimo_acesso DATETIME,
+    ip_ultimo_acesso VARCHAR(45),
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    INDEX idx_token (token_unico),
+    INDEX idx_expiracao (data_expiracao),
+    INDEX idx_empresa (empresa_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: usuarios (operadores e administradores)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    empresa_id INT NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,
+    nivel ENUM('admin', 'operador', 'caixa') DEFAULT 'operador',
+    pin_senha VARCHAR(6),
+    ativo BOOLEAN DEFAULT TRUE,
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ultimo_login DATETIME,
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    INDEX idx_empresa (empresa_id),
+    INDEX idx_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: clientes
+-- =====================================================
+CREATE TABLE IF NOT EXISTS clientes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    empresa_id INT NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    cpf_cnpj VARCHAR(18),
+    email VARCHAR(100),
+    telefone VARCHAR(20),
+    endereco TEXT,
+    tipo ENUM('pf', 'pj') DEFAULT 'pf',
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    INDEX idx_empresa (empresa_id),
+    INDEX idx_cpf_cnpj (cpf_cnpj)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: produtos
+-- =====================================================
+CREATE TABLE IF NOT EXISTS produtos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    empresa_id INT NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT,
+    codigo_barras VARCHAR(50) UNIQUE,
+    codigo_interno VARCHAR(50),
+    preco_custo DECIMAL(10,2),
+    preco_venda DECIMAL(10,2) NOT NULL,
+    estoque_atual DECIMAL(10,3) DEFAULT 0,
+    estoque_minimo DECIMAL(10,3) DEFAULT 0,
+    unidade ENUM('un', 'kg', 'l', 'm', 'cx') DEFAULT 'un',
+    categoria VARCHAR(50),
+    imagem_url VARCHAR(255),
+    ativo BOOLEAN DEFAULT TRUE,
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    INDEX idx_empresa (empresa_id),
+    INDEX idx_codigo (codigo_barras),
+    INDEX idx_nome (nome)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: vendas (cabeçalho)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS vendas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    empresa_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    cliente_id INT,
+    numero_cupom VARCHAR(50) UNIQUE,
+    tipo_cupom ENUM('fiscal', 'nao_fiscal') DEFAULT 'nao_fiscal',
+    subtotal DECIMAL(10,2) NOT NULL,
+    desconto DECIMAL(10,2) DEFAULT 0,
+    acrescimo DECIMAL(10,2) DEFAULT 0,
+    total DECIMAL(10,2) NOT NULL,
+    forma_pagamento ENUM('dinheiro', 'cartao_credito', 'cartao_debito', 'pix', 'fiado') NOT NULL,
+    pix_chave VARCHAR(100),
+    pix_qrcode TEXT,
+    pix_txid VARCHAR(100),
+    status ENUM('aberta', 'finalizada', 'cancelada') DEFAULT 'aberta',
+    observacoes TEXT,
+    data_venda DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_cancelamento DATETIME,
+    usuario_cancelamento INT,
+    motivo_cancelamento TEXT,
+    impresso BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+    INDEX idx_empresa (empresa_id),
+    INDEX idx_data (data_venda),
+    INDEX idx_cupom (numero_cupom),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: venda_itens (itens da venda)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS venda_itens (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    venda_id INT NOT NULL,
+    produto_id INT NOT NULL,
+    quantidade DECIMAL(10,3) NOT NULL,
+    preco_unitario DECIMAL(10,2) NOT NULL,
+    desconto_item DECIMAL(10,2) DEFAULT 0,
+    subtotal DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (venda_id) REFERENCES vendas(id) ON DELETE CASCADE,
+    FOREIGN KEY (produto_id) REFERENCES produtos(id),
+    INDEX idx_venda (venda_id),
+    INDEX idx_produto (produto_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: caixa_movimentacoes (sangria/suprimento)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS caixa_movimentacoes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    empresa_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    tipo ENUM('entrada', 'saida', 'sangria', 'suprimento') NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    descricao VARCHAR(255),
+    forma_pagamento ENUM('dinheiro', 'cartao', 'pix'),
+    data_movimentacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    INDEX idx_empresa (empresa_id),
+    INDEX idx_data (data_movimentacao)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABELA: auditoria (logs de segurança)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS auditoria (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    empresa_id INT,
+    usuario_id INT,
+    acao VARCHAR(50) NOT NULL,
+    tabela_afetada VARCHAR(50),
+    registro_id INT,
+    dados_antigos JSON,
+    dados_novos JSON,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    data_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_empresa (empresa_id),
+    INDEX idx_data (data_registro),
+    INDEX idx_acao (acao)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- VIEW: resumo_vendas_diario
+-- =====================================================
+CREATE OR REPLACE VIEW resumo_vendas_diario AS
+SELECT 
+    DATE(data_venda) as data,
+    COUNT(*) as total_vendas,
+    SUM(total) as faturamento,
+    forma_pagamento,
+    status
+FROM vendas 
+WHERE status = 'finalizada'
+GROUP BY DATE(data_venda), forma_pagamento, status;
+
+-- =====================================================
+-- TRIGGER: atualizar_estoque_ao_vender
+-- =====================================================
+DELIMITER $$
+CREATE TRIGGER atualizar_estoque_venda
+AFTER INSERT ON venda_itens
+FOR EACH ROW
+BEGIN
+    UPDATE produtos 
+    SET estoque_atual = estoque_atual - NEW.quantidade
+    WHERE id = NEW.produto_id;
+END$$
+DELIMITER ;
+
+-- =====================================================
+-- USUÁRIO ADMIN PADRÃO (senha: admin123 - TROCAR!)
+-- =====================================================
+-- INSERT INTO usuarios (empresa_id, nome, email, senha_hash, nivel, pin_senha) 
+-- VALUES (1, 'Administrador', 'admin@tanquedigital.com.br', 
+--         '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 
+--         'admin', '0000');
+
+-- =====================================================
+-- INSERIR EMPRESA PADRÃO TANQUE DIGITAL
+-- =====================================================
+INSERT INTO empresas (
+    nome_fantasia, razao_social, cnpj, email, telefone, whatsapp,
+    endereco, numero, bairro, cidade, uf, cep, status, plano
+) VALUES (
+    'Tanque Digital', 'Tanque Digital Tecnologia Ltda', '00.000.000/0001-00',
+    'contato@tanquedigital.com.br', '(84) 99999-9999', '(84) 99999-9999',
+    'Quiosque número 40, em frente à loja Produtos do Seridó', 'S/N',
+    'Lagoa Azul', 'Natal', 'RN', '59000-000', 'ativo', 'enterprise'
+);
