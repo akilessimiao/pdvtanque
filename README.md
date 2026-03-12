@@ -149,7 +149,7 @@ mysql -h myshared0786 -u pdvtanque -p pdvtanque < sql/schema.sql
 
 **Akiles Leopoldo Nunes Simião**  
 🐍 Python & Django | 🔧 Infraestrutura & Automação  
-📍 Ponta Negra, Natal-RN | 🇧🇷  
+📍 Natal-RN | 🇧🇷  
 
 ## 📄 Licença
 
